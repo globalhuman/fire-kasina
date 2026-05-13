@@ -145,6 +145,7 @@
             display: grid;
             grid-template-rows: auto minmax(0, 1fr) auto;
             height: 100vh;
+            height: 100dvh;
             min-height: 520px;
             padding: 16px 18px 20px;
             gap: 12px;
@@ -192,18 +193,25 @@
         }
 
         #flame-wrap {
-            position: relative;
+            position: fixed;
+            inset: 0;
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
             min-height: 0;
             isolation: isolate;
+            overflow: visible;
+            pointer-events: none;
+            z-index: 0;
         }
 
         #flame-halo {
             position: absolute;
-            width: min(64vh, 430px);
-            height: min(78vh, 540px);
+            width: min(92vmin, 620px);
+            height: min(108vmin, 760px);
             background: radial-gradient(ellipse at 50% 57%,
                 rgba(255, 90, 0, 0.18) 0%,
                 rgba(218, 42, 0, 0.1) 34%,
@@ -215,8 +223,8 @@
         }
 
         #flame-svg {
-            width: min(58vh, 330px, 72vw);
-            height: min(72vh, 440px, 82vw);
+            width: min(90vmin, 560px);
+            height: min(96vmin, 680px);
             overflow: visible;
             position: relative;
             z-index: 1;
@@ -233,6 +241,8 @@
             flex-direction: column;
             align-items: center;
             gap: 11px;
+            position: relative;
+            z-index: 2;
             transition: opacity 240ms ease;
         }
 
@@ -343,13 +353,13 @@
         }
 
         body.minimal #flame-svg {
-            width: min(72vh, 430px, 86vw);
-            height: min(86vh, 560px, 96vw);
+            width: min(96vmin, 720px);
+            height: min(104vmin, 860px);
         }
 
         body.minimal #flame-halo {
-            width: min(78vh, 560px);
-            height: min(92vh, 680px);
+            width: min(110vmin, 860px);
+            height: min(120vmin, 980px);
         }
 
         body:fullscreen.session-idle #flame-picker,
@@ -526,7 +536,7 @@
 
     <main id="flame-wrap" aria-label="Meditation flame">
         <div id="flame-halo"></div>
-        <svg id="flame-svg" viewBox="-20 -20 240 330" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+        <svg id="flame-svg" viewBox="-90 -90 380 510" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
     </main>
 
     <section id="controls" aria-label="Timer controls">
@@ -775,17 +785,16 @@ const FLAMES = [
     }
 ];
 
-const AUTO_RESTART_DELAY_MS = 9000;
-const CURSOR_IDLE_MS = 2200;
+const CURSOR_IDLE_MS = 900;
 
 let duration = 60;
 let remaining = 60;
 let ticker = null;
 let running = false;
+let sessionStarted = false;
 let currentFlame = 0;
 let whiteEnd = false;
 let minimalMode = false;
-let autoRestartTimer = null;
 let cursorTimer = null;
 let wakeLock = null;
 
@@ -820,7 +829,7 @@ function refresh() {
     display.textContent = fmt(remaining);
     display.classList.toggle("running", running);
     display.classList.toggle("ending", running && remaining <= 5);
-    playBtn.innerHTML = `${running ? "Pause" : "Begin"}<span class="shortcut">space</span>`;
+    playBtn.innerHTML = `${sessionStarted ? "Finish" : "Begin"}<span class="shortcut">space</span>`;
 }
 
 function loadFlame(index) {
@@ -841,9 +850,9 @@ function loadFlame(index) {
 
 function expandedViewBox(viewBox) {
     const [x, y, width, height] = viewBox.split(/\s+/).map(Number);
-    const padX = 20;
-    const padTop = 20;
-    const padBottom = 36;
+    const padX = 90;
+    const padTop = 90;
+    const padBottom = 130;
     return `${x - padX} ${y - padTop} ${width + padX * 2} ${height + padTop + padBottom}`;
 }
 
@@ -869,6 +878,7 @@ function setDuration(seconds, activeButton = null) {
     duration = seconds;
     remaining = seconds;
     stopTimer();
+    sessionStarted = false;
     refresh();
     customInput.style.borderColor = "";
     durationButtons.forEach(button => button.classList.toggle("active", button === activeButton));
@@ -896,7 +906,7 @@ function shortcutNode(label) {
 
 function startTimer() {
     if (running) return;
-    clearAutoRestart();
+    sessionStarted = true;
     running = true;
     refresh();
     requestWakeLock();
@@ -907,6 +917,7 @@ function startTimer() {
 
         if (remaining <= 0) {
             stopTimer();
+            sessionStarted = false;
             remaining = 0;
             refresh();
             triggerEnd();
@@ -927,16 +938,16 @@ function toggleTimer() {
         return;
     }
 
-    if (running) {
-        stopTimer();
+    if (sessionStarted) {
+        finishSession();
     } else {
         startTimer();
     }
 }
 
 function resetAll(autostart = false) {
-    clearAutoRestart();
     stopTimer();
+    sessionStarted = false;
     remaining = duration;
     endOverlay.classList.remove("show", "white");
     endMain.classList.remove("show");
@@ -950,7 +961,6 @@ function resetAll(autostart = false) {
 }
 
 function triggerEnd() {
-    clearAutoRestart();
     endOverlay.classList.toggle("white", whiteEnd || document.body.dataset.bg === "white");
     endOverlay.classList.add("show");
     window.setTimeout(() => endMain.classList.add("show"), 220);
@@ -958,12 +968,14 @@ function triggerEnd() {
     if (!minimalMode) {
         window.setTimeout(() => endAgain.classList.add("show"), 7000);
     }
-    autoRestartTimer = window.setTimeout(() => resetAll(true), AUTO_RESTART_DELAY_MS);
 }
 
-function clearAutoRestart() {
-    window.clearTimeout(autoRestartTimer);
-    autoRestartTimer = null;
+function finishSession() {
+    stopTimer();
+    sessionStarted = false;
+    remaining = 0;
+    refresh();
+    triggerEnd();
 }
 
 function selectDurationByOffset(offset) {
@@ -998,6 +1010,15 @@ function resetCursorIdle() {
     cursorTimer = window.setTimeout(() => {
         document.body.classList.add("cursor-hidden", "session-idle");
     }, CURSOR_IDLE_MS);
+}
+
+function forceHideCursorInFullscreen() {
+    if (!document.fullscreenElement) return;
+
+    window.clearTimeout(cursorTimer);
+    cursorTimer = window.setTimeout(() => {
+        document.body.classList.add("cursor-hidden", "session-idle");
+    }, 250);
 }
 
 function setMinimalMode(enabled) {
@@ -1128,7 +1149,7 @@ document.addEventListener("keydown", event => {
     }
 });
 
-document.addEventListener("fullscreenchange", resetCursorIdle);
+document.addEventListener("fullscreenchange", forceHideCursorInFullscreen);
 document.addEventListener("mousemove", resetCursorIdle);
 document.addEventListener("mousedown", resetCursorIdle);
 document.addEventListener("visibilitychange", () => {
