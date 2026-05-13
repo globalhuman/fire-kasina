@@ -7,741 +7,899 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after { box-sizing: border-box; }
+
+        :root {
+            color-scheme: dark;
+            --ember: rgba(255, 132, 30, 0.84);
+            --ember-soft: rgba(255, 132, 30, 0.38);
+            --ember-dim: rgba(255, 132, 30, 0.18);
+            --ink: #000;
+            --text-soft: rgba(255, 232, 185, 0.62);
+            --hint: rgba(255, 255, 255, 0.18);
+        }
 
         html, body {
-            width: 100%; height: 100%;
+            width: 100%;
+            height: 100%;
+            margin: 0;
             background: #000;
             overflow: hidden;
             user-select: none;
         }
 
-        #app {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            gap: 0;
+        body {
+            font-family: "Cinzel", Georgia, serif;
+            color: var(--text-soft);
         }
 
-        /* ── FLAME PICKER ── */
+        body.cursor-hidden,
+        body.cursor-hidden * {
+            cursor: none !important;
+        }
+
+        button, input {
+            font: inherit;
+        }
+
+        button {
+            background: rgba(255, 82, 0, 0.035);
+            border: 1px solid rgba(255, 110, 0, 0.28);
+            color: rgba(255, 178, 70, 0.64);
+            border-radius: 2px;
+            cursor: pointer;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            transition: background 180ms ease, border-color 180ms ease, color 180ms ease, opacity 180ms ease;
+        }
+
+        button:hover,
+        button:focus-visible {
+            background: rgba(255, 82, 0, 0.1);
+            border-color: rgba(255, 150, 20, 0.72);
+            color: rgba(255, 216, 112, 0.94);
+            outline: none;
+        }
+
+        button.active {
+            background: rgba(255, 94, 0, 0.14);
+            border-color: rgba(255, 165, 36, 0.72);
+            color: rgba(255, 226, 138, 0.96);
+        }
+
+        #app {
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            height: 100vh;
+            min-height: 520px;
+            padding: 16px 18px 20px;
+            gap: 12px;
+        }
+
         #flame-picker {
             display: flex;
-            gap: 6px;
-            padding: 14px 0 4px;
+            justify-content: center;
+            gap: 7px;
+            flex-wrap: wrap;
+            position: relative;
             z-index: 2;
+            transition: opacity 240ms ease;
         }
 
         .fpick {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            background: none;
-            border: 1px solid rgba(255,80,0,0.18);
-            color: rgba(255,140,40,0.45);
-            font-family: 'Cinzel', serif;
-            font-size: 0.55rem;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
+            display: grid;
+            grid-template-rows: 44px auto auto;
+            place-items: center;
+            min-width: 76px;
+            min-height: 78px;
             padding: 6px 10px 7px;
-            cursor: pointer;
-            border-radius: 1px;
-            transition: all 0.22s;
+            gap: 3px;
+            font-size: 0.56rem;
             line-height: 1;
         }
 
-        .fpick svg { pointer-events: none; }
-
-        .fpick:hover {
-            border-color: rgba(255,120,0,0.55);
-            color: rgba(255,190,70,0.8);
-            background: rgba(255,60,0,0.05);
+        .fpick svg {
+            width: 32px;
+            height: 44px;
+            overflow: visible;
+            pointer-events: none;
+            filter: drop-shadow(0 0 10px rgba(255, 72, 0, 0.48));
         }
 
-        .fpick.active {
-            border-color: rgba(255,140,0,0.65);
-            color: rgba(255,210,70,0.9);
-            background: rgba(255,80,0,0.1);
+        .shortcut {
+            display: block;
+            margin-top: 4px;
+            color: var(--hint);
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: 0.72rem;
+            font-style: italic;
+            letter-spacing: 0.03em;
+            text-transform: none;
         }
 
-        /* ── FLAME ── */
         #flame-wrap {
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex: 1;
-            width: 100%;
+            min-height: 0;
+            isolation: isolate;
         }
 
         #flame-halo {
             position: absolute;
-            width: 300px;
-            height: 380px;
-            background: radial-gradient(ellipse at 50% 60%,
-                rgba(220,60,0,0.16) 0%,
-                rgba(180,30,0,0.07) 45%,
-                transparent 72%);
+            width: min(64vh, 430px);
+            height: min(78vh, 540px);
+            background: radial-gradient(ellipse at 50% 57%,
+                rgba(255, 90, 0, 0.18) 0%,
+                rgba(218, 42, 0, 0.1) 34%,
+                rgba(170, 20, 0, 0.045) 60%,
+                transparent 76%);
             animation: halo-pulse 4s ease-in-out infinite;
             pointer-events: none;
-        }
-
-        @keyframes halo-pulse {
-            0%,100% { transform: scale(1);    opacity: 0.8; }
-            50%      { transform: scale(1.07); opacity: 1;   }
+            z-index: 0;
         }
 
         #flame-svg {
-            width:  min(46vh, 230px);
-            height: min(66vh, 330px);
-            animation: breathe 4s ease-in-out infinite;
+            width: min(58vh, 330px, 72vw);
+            height: min(72vh, 440px, 82vw);
+            overflow: visible;
             position: relative;
             z-index: 1;
-            transition: opacity 0.35s;
+            animation: breathe 4s ease-in-out infinite;
+            transition: opacity 260ms ease, filter 260ms ease;
         }
 
-        #flame-svg.switching { opacity: 0; }
-
-        @keyframes breathe {
-            0%,100% { transform: scale(1);     filter: drop-shadow(0 0 26px #FF4400cc) drop-shadow(0 0 65px #FF220066); }
-            50%      { transform: scale(1.028); filter: drop-shadow(0 0 40px #FF6600dd) drop-shadow(0 0 88px #FF330088); }
+        #flame-svg.switching {
+            opacity: 0;
         }
 
-        /* ── CONTROLS ── */
         #controls {
-            padding-bottom: 26px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 13px;
+            gap: 11px;
+            transition: opacity 240ms ease;
         }
 
         #timer-display {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(1.9rem, 5vw, 2.7rem);
+            min-width: 120px;
+            text-align: center;
+            color: rgba(255, 150, 48, 0.54);
+            font-size: clamp(1.9rem, 5vw, 2.8rem);
             font-weight: 400;
             letter-spacing: 0.14em;
-            color: rgba(255,130,40,0.5);
-            min-width: 90px;
-            text-align: center;
-            transition: color 0.6s;
+            line-height: 1.05;
+            transition: color 400ms ease;
         }
 
-        #timer-display.running { color: rgba(255,180,60,0.9); }
-        #timer-display.ending  { color: rgba(255,230,100,1);  }
-
-        .dur-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-
-        button {
-            background: none;
-            border: 1px solid rgba(255,90,0,0.25);
-            color: rgba(255,150,50,0.55);
-            font-family: 'Cinzel', serif;
-            font-size: 0.65rem;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            padding: 7px 14px;
-            cursor: pointer;
-            border-radius: 1px;
-            transition: all 0.2s;
+        #timer-display.running {
+            color: rgba(255, 190, 72, 0.92);
         }
 
-        button:hover {
-            border-color: rgba(255,120,0,0.7);
-            color: rgba(255,200,80,0.95);
-            background: rgba(255,70,0,0.07);
+        #timer-display.ending {
+            color: rgba(255, 238, 120, 1);
         }
 
-        button.active {
-            border-color: rgba(255,140,0,0.6);
-            color: rgba(255,210,70,0.88);
-            background: rgba(255,80,0,0.09);
-        }
-
-        #start-btn {
-            padding: 10px 34px;
-            font-size: 0.74rem;
-            border-color: rgba(255,110,0,0.48);
-            color: rgba(255,200,70,0.85);
-        }
-
-        #start-btn:hover { background: rgba(255,90,0,0.12); border-color: rgba(255,150,0,0.9); }
-        #reset-btn { display: none; }
-
-        /* Custom time input */
+        .dur-row,
+        .main-row,
+        .option-row,
         #custom-row {
-            display: none;
+            display: flex;
+            justify-content: center;
             align-items: center;
+            flex-wrap: wrap;
             gap: 8px;
         }
 
-        #custom-row.show { display: flex; }
-
-        #custom-input {
-            background: none;
-            border: 1px solid rgba(255,110,0,0.35);
-            color: rgba(255,200,70,0.9);
-            font-family: 'Cinzel', serif;
-            font-size: 0.72rem;
-            letter-spacing: 0.1em;
-            padding: 6px 12px;
-            width: 110px;
-            text-align: center;
-            border-radius: 1px;
-            outline: none;
-            caret-color: rgba(255,200,70,0.8);
+        .dur-row button,
+        .main-row button,
+        .option-row button,
+        #custom-row button {
+            min-height: 34px;
+            padding: 7px 13px;
+            font-size: 0.64rem;
         }
 
-        #custom-input::placeholder { color: rgba(255,150,50,0.35); font-style: italic; }
-        #custom-input:focus { border-color: rgba(255,150,0,0.7); }
+        .main-row button {
+            min-width: 112px;
+            padding: 9px 18px;
+        }
 
-        #custom-set {
-            padding: 6px 14px;
-            font-size: 0.62rem;
+        #custom-row {
+            display: none;
+        }
+
+        #custom-row.show {
+            display: flex;
+        }
+
+        #custom-input {
+            width: 148px;
+            min-height: 34px;
+            padding: 7px 10px;
+            border: 1px solid rgba(255, 110, 0, 0.35);
+            border-radius: 2px;
+            background: rgba(255, 86, 0, 0.035);
+            color: rgba(255, 218, 112, 0.92);
+            caret-color: rgba(255, 218, 112, 0.92);
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            text-align: center;
+            outline: none;
+        }
+
+        #custom-input::placeholder {
+            color: rgba(255, 165, 60, 0.34);
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-style: italic;
+            letter-spacing: 0.02em;
+        }
+
+        #custom-input:focus {
+            border-color: rgba(255, 160, 16, 0.72);
         }
 
         #instruction {
-            font-family: 'Cormorant Garamond', Georgia, serif;
+            max-width: 420px;
+            margin: 0;
+            color: rgba(255, 255, 255, 0.16);
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: clamp(0.74rem, 1.7vw, 0.88rem);
             font-style: italic;
-            font-size: clamp(0.72rem, 1.7vw, 0.86rem);
             font-weight: 300;
             letter-spacing: 0.03em;
-            color: rgba(255,255,255,0.16);
+            line-height: 1.75;
             text-align: center;
-            max-width: 340px;
-            line-height: 1.8;
         }
 
-        /* ── END OVERLAY ── */
+        body:fullscreen #app {
+            padding-top: 12px;
+        }
+
+        body:fullscreen.session-idle #flame-picker,
+        body:fullscreen.session-idle #controls {
+            opacity: 0.12;
+        }
+
         #end-overlay {
             position: fixed;
             inset: 0;
-            background: #000;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 18px;
+            background: #000;
+            color: rgba(255, 222, 132, 0.88);
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s;
-            z-index: 100;
+            z-index: 10;
+            transition: opacity 300ms ease, background 300ms ease, color 300ms ease;
         }
 
-        #end-overlay.show { opacity: 1; pointer-events: all; }
+        #end-overlay.white {
+            background: #fff;
+            color: rgba(0, 0, 0, 0.62);
+        }
+
+        #end-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
 
         #end-main {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(1.3rem, 3.5vw, 1.9rem);
+            color: currentColor;
+            opacity: 0;
+            font-size: clamp(1.25rem, 3.2vw, 2rem);
             font-weight: 400;
             letter-spacing: 0.22em;
-            text-transform: uppercase;
-            color: rgba(255,210,80,0);
+            line-height: 1.35;
             text-align: center;
-            transition: color 1.4s ease-out;
+            text-transform: uppercase;
+            transition: opacity 1100ms ease;
         }
 
-        #end-main.show { color: rgba(255,210,80,0.88); }
+        #end-main.show,
+        #end-sub.show,
+        #end-again.show {
+            opacity: 1;
+        }
 
         #end-sub {
-            font-family: 'Cormorant Garamond', serif;
+            max-width: 390px;
+            color: currentColor;
+            opacity: 0;
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: clamp(0.92rem, 2vw, 1.1rem);
             font-style: italic;
-            font-size: clamp(0.9rem, 2.2vw, 1.1rem);
             font-weight: 300;
-            letter-spacing: 0.06em;
-            color: rgba(255,255,255,0);
+            letter-spacing: 0.05em;
+            line-height: 1.85;
             text-align: center;
-            max-width: 380px;
-            line-height: 1.9;
-            transition: color 1.8s ease-out;
+            transition: opacity 1500ms ease;
         }
-
-        #end-sub.show { color: rgba(255,255,255,0.36); }
 
         #end-again {
-            margin-top: 30px;
+            margin-top: 18px;
             opacity: 0;
-            transition: opacity 1.2s;
-            border-color: rgba(255,110,0,0.4);
-            color: rgba(255,190,60,0.7);
-            padding: 10px 30px;
+            padding: 10px 26px;
+            transition: opacity 900ms ease, background 180ms ease, border-color 180ms ease, color 180ms ease;
         }
 
-        #end-again.show { opacity: 1; }
+        #end-overlay.white #end-again {
+            border-color: rgba(0, 0, 0, 0.24);
+            color: rgba(0, 0, 0, 0.58);
+        }
+
+        @keyframes halo-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.82; }
+            50% { transform: scale(1.07); opacity: 1; }
+        }
+
+        @keyframes breathe {
+            0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 30px rgba(255, 68, 0, 0.78)) drop-shadow(0 0 80px rgba(255, 34, 0, 0.42));
+            }
+            50% {
+                transform: scale(1.026);
+                filter: drop-shadow(0 0 44px rgba(255, 102, 0, 0.88)) drop-shadow(0 0 112px rgba(255, 42, 0, 0.56));
+            }
+        }
+
+        @keyframes flicker {
+            0%, 100% { transform: scale(1) skewX(0deg); opacity: 1; }
+            24% { transform: scale(1.014) skewX(0.55deg); opacity: 0.96; }
+            48% { transform: scale(0.992) skewX(-0.4deg); opacity: 1; }
+            72% { transform: scale(1.008) skewX(0.25deg); opacity: 0.97; }
+        }
+
+        @media (max-width: 680px) {
+            #app {
+                min-height: 460px;
+                padding: 10px 10px 14px;
+                gap: 7px;
+            }
+
+            .fpick {
+                min-width: 60px;
+                min-height: 68px;
+                padding: 5px 7px 6px;
+                font-size: 0.48rem;
+            }
+
+            .fpick svg {
+                width: 27px;
+                height: 38px;
+            }
+
+            .shortcut {
+                font-size: 0.66rem;
+            }
+
+            .dur-row button,
+            .main-row button,
+            .option-row button,
+            #custom-row button {
+                min-height: 32px;
+                padding: 6px 10px;
+                font-size: 0.58rem;
+            }
+        }
     </style>
 </head>
 <body>
 <div id="app">
-
-    <!-- Flame type selector -->
-    <div id="flame-picker">
+    <div id="flame-picker" aria-label="Flame type">
         <button class="fpick active" data-flame="0">
-            <svg width="32" height="44" viewBox="0 0 200 290">
-                <path d="M100,282C52,238,6,190,26,108C40,50,68,12,100,6C132,12,160,50,174,108C194,190,148,238,100,282Z" fill="#FF4400" opacity="0.9"/>
-                <path d="M100,245C66,205,36,164,54,102C67,62,82,36,100,30C118,36,133,62,146,102C164,164,134,205,100,245Z" fill="#FFB300"/>
-                <path d="M100,200C78,168,60,138,74,96C83,72,92,56,100,52C108,56,117,72,126,96C140,138,122,168,100,200Z" fill="#FFEE00"/>
-            </svg>
+            <svg viewBox="-30 -30 260 360"><path d="M100,282 C52,238,6,190,26,108 C40,50,68,12,100,6 C132,12,160,50,174,108 C194,190,148,238,100,282Z" fill="#ff4100"/><path d="M100,234 C72,196,52,158,68,100 C79,62,91,40,100,30 C109,40,121,62,132,100 C148,158,128,196,100,234Z" fill="#ffe86a"/></svg>
             Classic
+            <span class="shortcut">up/down</span>
         </button>
         <button class="fpick" data-flame="1">
-            <svg width="32" height="44" viewBox="0 0 200 290">
-                <path d="M100,275C82,245,72,205,82,150C90,108,98,72,106,25C114,68,118,110,116,150C124,205,118,244,100,275Z" fill="#FF4400" opacity="0.9"/>
-                <path d="M100,260C86,232,80,196,88,148C95,112,100,82,106,42C112,80,116,114,114,150C120,196,114,232,100,260Z" fill="#FFB300"/>
-                <ellipse cx="103" cy="48" rx="14" ry="22" fill="#FFEE00"/>
-            </svg>
+            <svg viewBox="-30 -30 260 360"><rect x="97" y="250" width="6" height="28" rx="3" fill="#333"/><path d="M100,258 C76,228,66,190,78,138 C87,100,96,68,106,22 C114,64,118,102,116,140 C126,190,122,228,100,258Z" fill="#ff4d00"/><path d="M101,214 C86,188,82,160,91,124 C98,96,102,76,106,52 C112,92,120,158,101,214Z" fill="#fff0a0"/></svg>
             Candle
+            <span class="shortcut">up/down</span>
         </button>
         <button class="fpick" data-flame="2">
-            <svg width="32" height="44" viewBox="0 0 200 290">
-                <circle cx="100" cy="145" r="90" fill="url(#thumbDisc)"/>
-                <defs><radialGradient id="thumbDisc" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="35%" stop-color="#FFEE00"/><stop offset="70%" stop-color="#FF4400"/><stop offset="100%" stop-color="#880000" stop-opacity="0"/></radialGradient></defs>
-            </svg>
+            <svg viewBox="-30 -30 260 360"><circle cx="100" cy="145" r="104" fill="#ff4a00" opacity="0.48"/><circle cx="100" cy="145" r="86" fill="#ffb400"/><circle cx="100" cy="145" r="48" fill="#fff8b8"/></svg>
             Solar
+            <span class="shortcut">up/down</span>
         </button>
         <button class="fpick" data-flame="3">
-            <svg width="32" height="44" viewBox="0 0 200 290">
-                <path d="M55,270C30,230,20,180,40,120C50,88,60,62,68,30C76,62,78,92,76,126C86,180,82,228,58,270Z" fill="#FF2200" opacity="0.8"/>
-                <path d="M145,270C170,230,180,180,160,120C150,88,140,62,132,30C124,62,122,92,124,126C114,180,118,228,142,270Z" fill="#FF2200" opacity="0.8"/>
-                <path d="M100,272C62,235,35,185,55,112C68,68,83,32,100,8C117,32,132,68,145,112C165,185,138,235,100,272Z" fill="#FF6600"/>
-                <path d="M100,235C72,200,55,165,70,112C80,78,90,55,100,38C110,55,120,78,130,112C145,165,128,200,100,235Z" fill="#FFCC00"/>
-            </svg>
+            <svg viewBox="-30 -30 260 360"><ellipse cx="100" cy="270" rx="88" ry="17" fill="#ff3300" opacity="0.42"/><path d="M58,268 C30,232,18,185,38,122 C49,86,59,60,68,28 C76,60,79,90,77,126 C88,185,84,230,60,268Z" fill="#e82800"/><path d="M142,268 C170,232,182,185,162,122 C151,86,141,60,132,28 C124,60,121,90,123,126 C112,185,116,230,140,268Z" fill="#e82800"/><path d="M100,250 C66,215,44,172,62,110 C74,68,87,40,100,22 C113,40,126,68,138,110 C156,172,134,215,100,250Z" fill="#ffd45b"/></svg>
             Bonfire
+            <span class="shortcut">up/down</span>
         </button>
         <button class="fpick" data-flame="4">
-            <svg width="32" height="44" viewBox="0 0 200 290">
-                <ellipse cx="100" cy="155" rx="90" ry="68" fill="url(#thumbEmber)"/>
-                <defs><radialGradient id="thumbEmber" cx="42%" cy="45%" r="55%"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="25%" stop-color="#FFEE00"/><stop offset="55%" stop-color="#FF4400"/><stop offset="100%" stop-color="#660000" stop-opacity="0.2"/></radialGradient></defs>
-                <ellipse cx="82" cy="142" rx="22" ry="16" fill="#FFFFAA" opacity="0.5"/>
-            </svg>
+            <svg viewBox="-30 -30 260 360"><ellipse cx="100" cy="148" rx="98" ry="76" fill="#b91500" opacity="0.52"/><ellipse cx="100" cy="148" rx="84" ry="64" fill="#ff5600"/><ellipse cx="84" cy="138" rx="34" ry="26" fill="#fff0a0" opacity="0.86"/><ellipse cx="122" cy="160" rx="28" ry="21" fill="#ffce4a" opacity="0.78"/></svg>
             Ember
+            <span class="shortcut">up/down</span>
         </button>
     </div>
 
-    <!-- Main flame -->
-    <div id="flame-wrap">
+    <main id="flame-wrap" aria-label="Meditation flame">
         <div id="flame-halo"></div>
-        <svg id="flame-svg" viewBox="0 0 200 290" xmlns="http://www.w3.org/2000/svg">
-            <!-- Populated by JS -->
-        </svg>
-    </div>
+        <svg id="flame-svg" viewBox="-30 -30 260 360" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+    </main>
 
-    <!-- Controls -->
-    <div id="controls">
+    <section id="controls" aria-label="Timer controls">
         <div id="timer-display">1:00</div>
 
-        <div class="dur-row">
-            <button data-dur="30">30s</button>
-            <button data-dur="60" class="active">60s</button>
-            <button data-dur="90">90s</button>
-            <button data-dur="120">2m</button>
-            <button data-dur="180">3m</button>
-            <button id="custom-btn" data-dur="custom">Custom</button>
+        <div class="dur-row" aria-label="Duration">
+            <button data-dur="30">30s<span class="shortcut">left/right</span></button>
+            <button data-dur="60" class="active">60s<span class="shortcut">left/right</span></button>
+            <button data-dur="90">90s<span class="shortcut">left/right</span></button>
+            <button data-dur="120">2m<span class="shortcut">left/right</span></button>
+            <button data-dur="180">3m<span class="shortcut">left/right</span></button>
+            <button id="custom-btn" data-dur="custom">Custom<span class="shortcut">enter</span></button>
         </div>
 
         <div id="custom-row">
-            <input id="custom-input" type="text" placeholder="e.g. 2:30 or 45" maxlength="6" autocomplete="off" spellcheck="false"/>
-            <button id="custom-set">Set</button>
+            <input id="custom-input" type="text" placeholder="2:30 or 45" maxlength="8" autocomplete="off" spellcheck="false" inputmode="numeric">
+            <button id="custom-set">Set<span class="shortcut">enter</span></button>
         </div>
 
-        <div style="display:flex;gap:10px;">
-            <button id="start-btn">Begin</button>
-            <button id="reset-btn">Reset</button>
+        <div class="main-row">
+            <button id="play-btn">Begin<span class="shortcut">space</span></button>
+            <button id="reset-btn">Reset<span class="shortcut">r</span></button>
+            <button id="fullscreen-btn">Fullscreen<span class="shortcut">f / esc</span></button>
+        </div>
+
+        <div class="option-row">
+            <button id="white-toggle" aria-pressed="false">White End<span class="shortcut">w</span></button>
         </div>
 
         <p id="instruction">
             Gaze softly at the white dot. Try not to blink or look away.<br>
             When the timer ends, close your eyes immediately.
         </p>
-    </div>
+    </section>
 </div>
 
-<!-- Pure black screen — afterimage lives here -->
-<div id="end-overlay">
+<div id="end-overlay" aria-live="polite">
     <div id="end-main">Close your eyes now</div>
     <div id="end-sub">
         Observe the nimitta forming in the darkness.<br>
         Let it stabilise without grasping.
     </div>
-    <button id="end-again" onclick="resetAll()">Sit Again</button>
+    <button id="end-again">Sit Again<span class="shortcut">space</span></button>
 </div>
 
 <script>
-// ─────────────────────────────────────────────
-//  FLAME DEFINITIONS
-// ─────────────────────────────────────────────
 const FLAMES = [
-
-  // 0 — CLASSIC
-  { name:'Classic', viewBox:'0 0 200 290', dot:[100,162], svg:`
-    <defs>
-      <radialGradient id="g1" cx="50%" cy="72%" r="52%">
-        <stop offset="0%"   stop-color="#FF2200"/>
-        <stop offset="55%"  stop-color="#AA0800"/>
-        <stop offset="100%" stop-color="#550000" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="g2" cx="50%" cy="68%" r="50%">
-        <stop offset="0%"   stop-color="#FF6600"/>
-        <stop offset="50%"  stop-color="#FF2200"/>
-        <stop offset="100%" stop-color="#990800" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="g3" cx="50%" cy="64%" r="46%">
-        <stop offset="0%"   stop-color="#FFB300"/>
-        <stop offset="45%"  stop-color="#FF5500"/>
-        <stop offset="100%" stop-color="#CC1100" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="g4" cx="50%" cy="60%" r="42%">
-        <stop offset="0%"   stop-color="#FFEE00"/>
-        <stop offset="40%"  stop-color="#FFB300"/>
-        <stop offset="100%" stop-color="#FF4400" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="g5" cx="50%" cy="55%" r="35%">
-        <stop offset="0%"   stop-color="#FFFFFF"/>
-        <stop offset="35%"  stop-color="#FFFFBB" stop-opacity="0.85"/>
-        <stop offset="100%" stop-color="#FFEE00" stop-opacity="0"/>
-      </radialGradient>
-    </defs>
-    <path d="M100,282 C52,238,6,190,26,108 C40,50,68,12,100,6 C132,12,160,50,174,108 C194,190,148,238,100,282Z" fill="url(#g1)"/>
-    <path d="M100,265 C60,222,22,176,42,104 C56,56,76,24,100,18 C124,24,144,56,158,104 C178,176,140,222,100,265Z" fill="url(#g2)"/>
-    <g style="transform-origin:100px 200px;animation:flicker 2.1s ease-in-out infinite">
-      <path d="M100,245 C66,205,36,164,54,102 C67,62,82,36,100,30 C118,36,133,62,146,102 C164,164,134,205,100,245Z" fill="url(#g3)"/>
-      <path d="M100,220 C72,185,50,150,66,100 C77,68,88,48,100,43 C112,48,123,68,134,100 C150,150,128,185,100,220Z" fill="url(#g4)"/>
-      <path d="M100,192 C80,165,62,138,76,95 C85,72,92,56,100,52 C108,56,115,72,124,95 C138,138,120,165,100,192Z" fill="url(#g5)"/>
-    </g>
-  `},
-
-  // 1 — CANDLE
-  { name:'Candle', viewBox:'0 0 200 290', dot:[103,152], svg:`
-    <defs>
-      <radialGradient id="cOuter" cx="50%" cy="65%" r="48%">
-        <stop offset="0%"   stop-color="#FF3300"/>
-        <stop offset="55%"  stop-color="#AA0800"/>
-        <stop offset="100%" stop-color="#440000" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="cMid" cx="50%" cy="60%" r="44%">
-        <stop offset="0%"   stop-color="#FF7700"/>
-        <stop offset="48%"  stop-color="#FF2200"/>
-        <stop offset="100%" stop-color="#880000" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="cInner" cx="52%" cy="55%" r="40%">
-        <stop offset="0%"   stop-color="#FFCC00"/>
-        <stop offset="42%"  stop-color="#FF6600"/>
-        <stop offset="100%" stop-color="#BB1100" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="cCore" cx="52%" cy="50%" r="34%">
-        <stop offset="0%"   stop-color="#FFFF99"/>
-        <stop offset="38%"  stop-color="#FFCC00" stop-opacity="0.85"/>
-        <stop offset="100%" stop-color="#FF8800" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="cTip" cx="52%" cy="48%" r="28%">
-        <stop offset="0%"   stop-color="#FFFFFF"/>
-        <stop offset="40%"  stop-color="#FFFFCC" stop-opacity="0.8"/>
-        <stop offset="100%" stop-color="#FFFF00" stop-opacity="0"/>
-      </radialGradient>
-    </defs>
-    <!-- Wick -->
-    <rect x="98" y="256" width="5" height="18" rx="2" fill="#222"/>
-    <rect x="99" y="248" width="3" height="12" rx="1" fill="#555"/>
-    <!-- Outer flame — teardrop lean right -->
-    <path d="M100,258 C76,228,66,190,78,138 C87,100,96,68,106,22 C114,64,118,102,116,140 C126,190,122,228,100,258Z" fill="url(#cOuter)"/>
-    <!-- Mid -->
-    <path d="M100,248 C80,218,72,184,83,136 C92,102,99,76,106,36 C113,74,116,104,114,138 C124,184,118,218,100,248Z" fill="url(#cMid)"/>
-    <g style="transform-origin:104px 140px;animation:flicker 2.3s ease-in-out infinite">
-      <!-- Inner -->
-      <path d="M100,232 C82,204,76,174,86,132 C94,104,100,82,106,50 C112,80,115,106,113,134 C122,176,116,204,100,232Z" fill="url(#cInner)"/>
-      <!-- Core -->
-      <path d="M100,210 C86,185,80,158,89,122 C96,96,101,76,106,52 C111,74,115,98,112,124 C120,160,114,186,100,210Z" fill="url(#cCore)"/>
-      <!-- Hot tip -->
-      <ellipse cx="104" cy="62" rx="18" ry="32" fill="url(#cTip)"/>
-    </g>
-  `},
-
-  // 2 — SOLAR DISC
-  { name:'Solar', viewBox:'0 0 200 290', dot:[100,145], svg:`
-    <defs>
-      <radialGradient id="sRim" cx="50%" cy="50%" r="50%">
-        <stop offset="60%"  stop-color="#FF2200" stop-opacity="0"/>
-        <stop offset="85%"  stop-color="#FF2200" stop-opacity="0.6"/>
-        <stop offset="100%" stop-color="#880000" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="sMain" cx="50%" cy="50%" r="50%">
-        <stop offset="0%"   stop-color="#FFFFFF"/>
-        <stop offset="18%"  stop-color="#FFFF88"/>
-        <stop offset="42%"  stop-color="#FFCC00"/>
-        <stop offset="68%"  stop-color="#FF4400"/>
-        <stop offset="88%"  stop-color="#AA0800"/>
-        <stop offset="100%" stop-color="#440000" stop-opacity="0.4"/>
-      </radialGradient>
-      <radialGradient id="sCore" cx="50%" cy="50%" r="50%">
-        <stop offset="0%"   stop-color="#FFFFFF"/>
-        <stop offset="45%"  stop-color="#FFFF66" stop-opacity="0.9"/>
-        <stop offset="100%" stop-color="#FFCC00" stop-opacity="0"/>
-      </radialGradient>
-    </defs>
-    <!-- Outer corona glow -->
-    <circle cx="100" cy="145" r="108" fill="url(#sRim)"/>
-    <!-- Main disc -->
-    <circle cx="100" cy="145" r="92" fill="url(#sMain)"/>
-    <!-- Inner bright core -->
-    <circle cx="100" cy="145" r="50" fill="url(#sCore)"/>
-  `},
-
-  // 3 — BONFIRE
-  { name:'Bonfire', viewBox:'0 0 200 290', dot:[100,165], svg:`
-    <defs>
-      <radialGradient id="bfL" cx="38%" cy="70%" r="55%">
-        <stop offset="0%"   stop-color="#FF3300"/>
-        <stop offset="55%"  stop-color="#990800"/>
-        <stop offset="100%" stop-color="#440000" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="bfR" cx="62%" cy="70%" r="55%">
-        <stop offset="0%"   stop-color="#FF3300"/>
-        <stop offset="55%"  stop-color="#990800"/>
-        <stop offset="100%" stop-color="#440000" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="bfC" cx="50%" cy="68%" r="52%">
-        <stop offset="0%"   stop-color="#FF6600"/>
-        <stop offset="50%"  stop-color="#FF1100"/>
-        <stop offset="100%" stop-color="#550000" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="bfCI" cx="50%" cy="62%" r="46%">
-        <stop offset="0%"   stop-color="#FFCC00"/>
-        <stop offset="44%"  stop-color="#FF5500"/>
-        <stop offset="100%" stop-color="#BB1100" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="bfCo" cx="50%" cy="56%" r="38%">
-        <stop offset="0%"   stop-color="#FFFFFF"/>
-        <stop offset="35%"  stop-color="#FFEE88" stop-opacity="0.9"/>
-        <stop offset="100%" stop-color="#FFBB00" stop-opacity="0"/>
-      </radialGradient>
-    </defs>
-    <!-- Base embers glow -->
-    <ellipse cx="100" cy="268" rx="85" ry="16" fill="#FF2200" opacity="0.4"/>
-    <!-- Left flame -->
-    <path d="M58,268 C30,232,18,185,38,122 C49,86,59,60,68,28 C76,60,79,90,77,126 C88,185,84,230,60,268Z" fill="url(#bfL)"/>
-    <!-- Right flame -->
-    <path d="M142,268 C170,232,182,185,162,122 C151,86,141,60,132,28 C124,60,121,90,123,126 C112,185,116,230,140,268Z" fill="url(#bfR)"/>
-    <!-- Centre flame (tallest) -->
-    <path d="M100,272 C60,235,32,185,52,112 C65,66,82,30,100,8 C118,30,135,66,148,112 C168,185,140,235,100,272Z" fill="url(#bfC)"/>
-    <g style="transform-origin:100px 180px;animation:flicker 1.9s ease-in-out infinite">
-      <path d="M100,250 C66,215,44,172,62,110 C74,68,87,40,100,22 C113,40,126,68,138,110 C156,172,134,215,100,250Z" fill="url(#bfCI)"/>
-      <path d="M100,220 C74,190,57,158,72,108 C82,74,91,52,100,36 C109,52,118,74,128,108 C143,158,126,190,100,220Z" fill="url(#bfCo)"/>
-    </g>
-  `},
-
-  // 4 — EMBER / COAL
-  { name:'Ember', viewBox:'0 0 200 290', dot:[100,148], svg:`
-    <defs>
-      <radialGradient id="eOuter" cx="50%" cy="50%" r="50%">
-        <stop offset="45%"  stop-color="#CC1100" stop-opacity="0"/>
-        <stop offset="72%"  stop-color="#CC1100" stop-opacity="0.55"/>
-        <stop offset="100%" stop-color="#440000" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="eMain" cx="50%" cy="50%" r="50%">
-        <stop offset="0%"   stop-color="#FFBB00"/>
-        <stop offset="28%"  stop-color="#FF5500"/>
-        <stop offset="60%"  stop-color="#CC0800"/>
-        <stop offset="88%"  stop-color="#660000"/>
-        <stop offset="100%" stop-color="#220000"/>
-      </radialGradient>
-      <radialGradient id="eHot1" cx="40%" cy="42%" r="55%">
-        <stop offset="0%"   stop-color="#FFFFFF"/>
-        <stop offset="30%"  stop-color="#FFFF88" stop-opacity="0.85"/>
-        <stop offset="100%" stop-color="#FFAA00" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="eHot2" cx="65%" cy="58%" r="55%">
-        <stop offset="0%"   stop-color="#FFFF66"/>
-        <stop offset="40%"  stop-color="#FF8800" stop-opacity="0.7"/>
-        <stop offset="100%" stop-color="#FF3300" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="eCore" cx="46%" cy="45%" r="50%">
-        <stop offset="0%"   stop-color="#FFFFFF"/>
-        <stop offset="50%"  stop-color="#FFFFAA" stop-opacity="0.9"/>
-        <stop offset="100%" stop-color="#FFCC00" stop-opacity="0"/>
-      </radialGradient>
-    </defs>
-    <!-- Outer corona -->
-    <ellipse cx="100" cy="148" rx="96" ry="74" fill="url(#eOuter)"/>
-    <!-- Main coal body -->
-    <ellipse cx="100" cy="148" rx="84" ry="64" fill="url(#eMain)"/>
-    <g style="transform-origin:100px 148px;animation:flicker 2.6s ease-in-out infinite">
-      <!-- Hot spot 1 -->
-      <ellipse cx="82" cy="138" rx="34" ry="26" fill="url(#eHot1)"/>
-      <!-- Hot spot 2 -->
-      <ellipse cx="120" cy="158" rx="28" ry="21" fill="url(#eHot2)"/>
-      <!-- Bright core -->
-      <ellipse cx="97" cy="142" rx="20" ry="15" fill="url(#eCore)"/>
-    </g>
-  `},
+    {
+        name: "Classic",
+        dot: [100, 162],
+        svg: `
+            <defs>
+                <radialGradient id="classicOuter" cx="50%" cy="70%" r="54%">
+                    <stop offset="0%" stop-color="#ff2b00"/>
+                    <stop offset="58%" stop-color="#aa0800"/>
+                    <stop offset="100%" stop-color="#440000" stop-opacity="0"/>
+                </radialGradient>
+                <radialGradient id="classicMid" cx="50%" cy="64%" r="48%">
+                    <stop offset="0%" stop-color="#ffbf00"/>
+                    <stop offset="48%" stop-color="#ff5300"/>
+                    <stop offset="100%" stop-color="#c20d00" stop-opacity="0"/>
+                </radialGradient>
+                <radialGradient id="classicCore" cx="50%" cy="56%" r="36%">
+                    <stop offset="0%" stop-color="#fff"/>
+                    <stop offset="42%" stop-color="#fff7a8" stop-opacity="0.88"/>
+                    <stop offset="100%" stop-color="#ffdd00" stop-opacity="0"/>
+                </radialGradient>
+            </defs>
+            <path d="M100,282 C52,238,6,190,26,108 C40,50,68,12,100,6 C132,12,160,50,174,108 C194,190,148,238,100,282Z" fill="url(#classicOuter)"/>
+            <g style="transform-origin:100px 190px;animation:flicker 2.1s ease-in-out infinite">
+                <path d="M100,246 C66,206,36,164,54,102 C67,62,82,36,100,30 C118,36,133,62,146,102 C164,164,134,206,100,246Z" fill="url(#classicMid)"/>
+                <path d="M100,198 C80,166,62,138,76,95 C85,72,92,56,100,52 C108,56,115,72,124,95 C138,138,120,166,100,198Z" fill="url(#classicCore)"/>
+            </g>`
+    },
+    {
+        name: "Candle",
+        dot: [103, 152],
+        svg: `
+            <defs>
+                <radialGradient id="candleOuter" cx="52%" cy="64%" r="48%">
+                    <stop offset="0%" stop-color="#ff3b00"/>
+                    <stop offset="55%" stop-color="#a60800"/>
+                    <stop offset="100%" stop-color="#440000" stop-opacity="0"/>
+                </radialGradient>
+                <radialGradient id="candleCore" cx="52%" cy="50%" r="36%">
+                    <stop offset="0%" stop-color="#fff"/>
+                    <stop offset="38%" stop-color="#fff6ad"/>
+                    <stop offset="100%" stop-color="#ffb000" stop-opacity="0"/>
+                </radialGradient>
+            </defs>
+            <rect x="98" y="254" width="5" height="24" rx="2.5" fill="#242424"/>
+            <g style="transform-origin:104px 142px;animation:flicker 2.35s ease-in-out infinite">
+                <path d="M100,260 C76,228,66,190,78,138 C87,100,96,68,106,22 C114,64,118,102,116,140 C126,190,122,228,100,260Z" fill="url(#candleOuter)"/>
+                <path d="M100,214 C86,185,80,158,89,122 C96,96,101,76,106,52 C111,74,115,98,112,124 C120,160,114,186,100,214Z" fill="url(#candleCore)"/>
+            </g>`
+    },
+    {
+        name: "Solar",
+        dot: [100, 145],
+        svg: `
+            <defs>
+                <radialGradient id="solarMain" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#fff"/>
+                    <stop offset="20%" stop-color="#ffff92"/>
+                    <stop offset="44%" stop-color="#ffcc00"/>
+                    <stop offset="70%" stop-color="#ff4300"/>
+                    <stop offset="100%" stop-color="#5e0000" stop-opacity="0"/>
+                </radialGradient>
+                <radialGradient id="solarRim" cx="50%" cy="50%" r="50%">
+                    <stop offset="66%" stop-color="#ff2200" stop-opacity="0"/>
+                    <stop offset="86%" stop-color="#ff2200" stop-opacity="0.58"/>
+                    <stop offset="100%" stop-color="#8c0000" stop-opacity="0"/>
+                </radialGradient>
+            </defs>
+            <circle cx="100" cy="145" r="114" fill="url(#solarRim)"/>
+            <circle cx="100" cy="145" r="94" fill="url(#solarMain)"/>`
+    },
+    {
+        name: "Bonfire",
+        dot: [100, 165],
+        svg: `
+            <defs>
+                <radialGradient id="bonfireSide" cx="50%" cy="70%" r="55%">
+                    <stop offset="0%" stop-color="#ff3300"/>
+                    <stop offset="58%" stop-color="#9a0800"/>
+                    <stop offset="100%" stop-color="#3d0000" stop-opacity="0"/>
+                </radialGradient>
+                <radialGradient id="bonfireCenter" cx="50%" cy="62%" r="48%">
+                    <stop offset="0%" stop-color="#fff"/>
+                    <stop offset="34%" stop-color="#ffe888"/>
+                    <stop offset="72%" stop-color="#ff5300"/>
+                    <stop offset="100%" stop-color="#b80a00" stop-opacity="0"/>
+                </radialGradient>
+            </defs>
+            <ellipse cx="100" cy="270" rx="88" ry="17" fill="#ff2600" opacity="0.38"/>
+            <path d="M58,268 C30,232,18,185,38,122 C49,86,59,60,68,28 C76,60,79,90,77,126 C88,185,84,230,60,268Z" fill="url(#bonfireSide)"/>
+            <path d="M142,268 C170,232,182,185,162,122 C151,86,141,60,132,28 C124,60,121,90,123,126 C112,185,116,230,140,268Z" fill="url(#bonfireSide)"/>
+            <g style="transform-origin:100px 180px;animation:flicker 1.9s ease-in-out infinite">
+                <path d="M100,260 C60,225,32,176,52,112 C65,66,82,30,100,8 C118,30,135,66,148,112 C168,176,140,225,100,260Z" fill="url(#bonfireCenter)"/>
+            </g>`
+    },
+    {
+        name: "Ember",
+        dot: [100, 148],
+        svg: `
+            <defs>
+                <radialGradient id="emberBody" cx="50%" cy="50%" r="52%">
+                    <stop offset="0%" stop-color="#ffbb00"/>
+                    <stop offset="30%" stop-color="#ff5800"/>
+                    <stop offset="64%" stop-color="#c40800"/>
+                    <stop offset="100%" stop-color="#220000"/>
+                </radialGradient>
+                <radialGradient id="emberGlow" cx="44%" cy="43%" r="58%">
+                    <stop offset="0%" stop-color="#fff"/>
+                    <stop offset="34%" stop-color="#ffff92" stop-opacity="0.84"/>
+                    <stop offset="100%" stop-color="#ffaa00" stop-opacity="0"/>
+                </radialGradient>
+            </defs>
+            <ellipse cx="100" cy="148" rx="100" ry="78" fill="#c30c00" opacity="0.42"/>
+            <ellipse cx="100" cy="148" rx="84" ry="64" fill="url(#emberBody)"/>
+            <g style="transform-origin:100px 148px;animation:flicker 2.6s ease-in-out infinite">
+                <ellipse cx="82" cy="138" rx="34" ry="26" fill="url(#emberGlow)"/>
+                <ellipse cx="120" cy="158" rx="28" ry="21" fill="#ffd05a" opacity="0.62"/>
+            </g>`
+    }
 ];
 
-// ─────────────────────────────────────────────
-//  TIMER STATE
-// ─────────────────────────────────────────────
-let duration  = 60;
+const AUTO_RESTART_DELAY_MS = 9000;
+const CURSOR_IDLE_MS = 2200;
+
+let duration = 60;
 let remaining = 60;
-let ticker    = null;
-let running   = false;
+let ticker = null;
+let running = false;
 let currentFlame = 0;
+let whiteEnd = false;
+let autoRestartTimer = null;
+let cursorTimer = null;
+let wakeLock = null;
 
-const display    = document.getElementById('timer-display');
-const startBtn   = document.getElementById('start-btn');
-const resetBtn   = document.getElementById('reset-btn');
-const endOverlay = document.getElementById('end-overlay');
-const endMain    = document.getElementById('end-main');
-const endSub     = document.getElementById('end-sub');
-const endAgain   = document.getElementById('end-again');
-const flameSvg   = document.getElementById('flame-svg');
-const customRow  = document.getElementById('custom-row');
-const customInput = document.getElementById('custom-input');
-const customSet  = document.getElementById('custom-set');
+const display = document.getElementById("timer-display");
+const playBtn = document.getElementById("play-btn");
+const resetBtn = document.getElementById("reset-btn");
+const fullscreenBtn = document.getElementById("fullscreen-btn");
+const whiteToggle = document.getElementById("white-toggle");
+const endOverlay = document.getElementById("end-overlay");
+const endMain = document.getElementById("end-main");
+const endSub = document.getElementById("end-sub");
+const endAgain = document.getElementById("end-again");
+const flameSvg = document.getElementById("flame-svg");
+const customBtn = document.getElementById("custom-btn");
+const customRow = document.getElementById("custom-row");
+const customInput = document.getElementById("custom-input");
+const customSet = document.getElementById("custom-set");
+const durationButtons = [...document.querySelectorAll(".dur-row button[data-dur]")];
+const flameButtons = [...document.querySelectorAll(".fpick")];
 
-// Global flicker keyframe (applied to g elements inside each flame)
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes flicker {
-    0%,100% { transform:scale(1)     skewX(0deg);    opacity:1;    }
-    20%      { transform:scale(1.012) skewX(0.6deg);  opacity:0.97; }
-    45%      { transform:scale(0.993) skewX(-0.4deg); opacity:1;    }
-    70%      { transform:scale(1.008) skewX(0.3deg);  opacity:0.96; }
-  }
-`;
-document.head.appendChild(style);
-
-// ─────────────────────────────────────────────
-//  FLAME SWITCHING
-// ─────────────────────────────────────────────
-function loadFlame(idx) {
-    const f = FLAMES[idx];
-    flameSvg.classList.add('switching');
-    setTimeout(() => {
-        flameSvg.setAttribute('viewBox', f.viewBox);
-        flameSvg.innerHTML = f.svg +
-            `<circle cx="${f.dot[0]}" cy="${f.dot[1]}" r="5.5" fill="white"
-             style="filter:drop-shadow(0 0 5px rgba(255,255,255,0.95)) drop-shadow(0 0 12px rgba(255,255,255,0.5))"/>`;
-        flameSvg.classList.remove('switching');
-    }, 320);
+function fmt(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${String(secs).padStart(2, "0")}`;
 }
 
-document.querySelectorAll('.fpick').forEach(btn => {
-    btn.addEventListener('click', () => {
-        if (running) return;
-        document.querySelectorAll('.fpick').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentFlame = parseInt(btn.dataset.flame);
-        loadFlame(currentFlame);
-    });
-});
+function refresh() {
+    display.textContent = fmt(remaining);
+    display.classList.toggle("running", running);
+    display.classList.toggle("ending", running && remaining <= 5);
+    playBtn.innerHTML = `${running ? "Pause" : "Begin"}<span class="shortcut">space</span>`;
+}
 
-// ─────────────────────────────────────────────
-//  DURATION BUTTONS
-// ─────────────────────────────────────────────
-const fmt = s => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
-function refresh() { display.textContent = fmt(remaining); }
+function loadFlame(index) {
+    currentFlame = (index + FLAMES.length) % FLAMES.length;
+    const flame = FLAMES[currentFlame];
 
-document.querySelectorAll('[data-dur]').forEach(btn => {
-    btn.addEventListener('click', () => {
-        if (running) return;
-        const val = btn.dataset.dur;
+    flameSvg.classList.add("switching");
+    window.setTimeout(() => {
+        flameSvg.innerHTML = `${flame.svg}
+            <circle cx="${flame.dot[0]}" cy="${flame.dot[1]}" r="5.5" fill="#fff"
+                style="filter:drop-shadow(0 0 5px rgba(255,255,255,0.95)) drop-shadow(0 0 15px rgba(255,255,255,0.66))"/>`;
+        flameSvg.classList.remove("switching");
+    }, 170);
 
-        document.querySelectorAll('[data-dur]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+    flameButtons.forEach((button, idx) => button.classList.toggle("active", idx === currentFlame));
+}
 
-        if (val === 'custom') {
-            customRow.classList.add('show');
-            customInput.focus();
-        } else {
-            customRow.classList.remove('show');
-            duration = remaining = parseInt(val);
-            refresh();
-        }
-    });
-});
+function parseCustomTime(value) {
+    const text = value.trim().toLowerCase();
+    if (!text) return null;
 
-// Parse custom time input: accepts "90", "1:30", "2m", "2m30s", "2:30"
-function parseCustomTime(str) {
-    str = str.trim().toLowerCase();
-    // mm:ss
-    const colonMatch = str.match(/^(\d+):(\d{1,2})$/);
-    if (colonMatch) return parseInt(colonMatch[1]) * 60 + parseInt(colonMatch[2]);
-    // Xm or XmYs
-    const mMatch = str.match(/^(\d+)m(?:(\d+)s?)?$/);
-    if (mMatch) return parseInt(mMatch[1]) * 60 + (mMatch[2] ? parseInt(mMatch[2]) : 0);
-    // plain seconds
-    const numMatch = str.match(/^(\d+)s?$/);
-    if (numMatch) return parseInt(numMatch[1]);
-    return null;
+    const colon = text.match(/^(\d{1,2}):([0-5]?\d)$/);
+    if (colon) return Number(colon[1]) * 60 + Number(colon[2]);
+
+    const units = text.match(/^(?:(\d+)\s*m(?:in(?:ute)?s?)?)?\s*(?:(\d+)\s*s(?:ec(?:ond)?s?)?)?$/);
+    if (units && (units[1] || units[2])) {
+        return (Number(units[1] || 0) * 60) + Number(units[2] || 0);
+    }
+
+    const number = text.match(/^(\d+)$/);
+    return number ? Number(number[1]) : null;
+}
+
+function setDuration(seconds, activeButton = null) {
+    if (!Number.isFinite(seconds) || seconds < 5 || seconds > 3600) return false;
+
+    duration = seconds;
+    remaining = seconds;
+    stopTimer();
+    refresh();
+    customInput.style.borderColor = "";
+    durationButtons.forEach(button => button.classList.toggle("active", button === activeButton));
+    return true;
 }
 
 function applyCustomTime() {
-    const secs = parseCustomTime(customInput.value);
-    if (!secs || secs < 5 || secs > 3600) {
-        customInput.style.borderColor = 'rgba(255,50,0,0.7)';
-        setTimeout(() => customInput.style.borderColor = '', 1000);
+    const seconds = parseCustomTime(customInput.value);
+    if (!setDuration(seconds, customBtn)) {
+        customInput.style.borderColor = "rgba(255, 50, 0, 0.78)";
         return;
     }
-    duration = remaining = secs;
-    refresh();
-    customRow.classList.remove('show');
+
+    customRow.classList.remove("show");
+    customBtn.textContent = fmt(duration);
+    customBtn.appendChild(shortcutNode("enter"));
 }
 
-customSet.addEventListener('click', applyCustomTime);
-customInput.addEventListener('keydown', e => { if (e.key === 'Enter') applyCustomTime(); });
+function shortcutNode(label) {
+    const span = document.createElement("span");
+    span.className = "shortcut";
+    span.textContent = label;
+    return span;
+}
 
-// ─────────────────────────────────────────────
-//  TIMER
-// ─────────────────────────────────────────────
-startBtn.addEventListener('click', () => {
+function startTimer() {
     if (running) return;
+    clearAutoRestart();
     running = true;
-    startBtn.style.display = 'none';
-    resetBtn.style.display = '';
-    display.classList.add('running');
+    refresh();
+    requestWakeLock();
 
-    ticker = setInterval(() => {
-        remaining--;
+    ticker = window.setInterval(() => {
+        remaining -= 1;
         refresh();
-        if (remaining <= 5 && remaining > 0) display.classList.add('ending');
+
         if (remaining <= 0) {
-            clearInterval(ticker);
-            ticker = null;
-            running = false;
+            stopTimer();
+            remaining = 0;
+            refresh();
             triggerEnd();
         }
     }, 1000);
-});
-
-resetBtn.addEventListener('click', resetAll);
-
-function triggerEnd() {
-    endOverlay.classList.add('show');
-    setTimeout(() => endMain.classList.add('show'), 260);
-    setTimeout(() => endSub.classList.add('show'),  2500);
-    setTimeout(() => endAgain.classList.add('show'), 7000);
 }
 
-function resetAll() {
-    clearInterval(ticker);
+function stopTimer() {
+    window.clearInterval(ticker);
     ticker = null;
     running = false;
-    remaining = duration;
     refresh();
-
-    endOverlay.classList.remove('show');
-    endMain.classList.remove('show');
-    endSub.classList.remove('show');
-    endAgain.classList.remove('show');
-
-    startBtn.style.display = '';
-    resetBtn.style.display = 'none';
-    display.classList.remove('running', 'ending');
 }
 
-// ─────────────────────────────────────────────
-//  INIT
-// ─────────────────────────────────────────────
+function toggleTimer() {
+    if (endOverlay.classList.contains("show")) {
+        resetAll(true);
+        return;
+    }
+
+    if (running) {
+        stopTimer();
+    } else {
+        startTimer();
+    }
+}
+
+function resetAll(autostart = false) {
+    clearAutoRestart();
+    stopTimer();
+    remaining = duration;
+    endOverlay.classList.remove("show", "white");
+    endMain.classList.remove("show");
+    endSub.classList.remove("show");
+    endAgain.classList.remove("show");
+    refresh();
+
+    if (autostart) {
+        window.setTimeout(startTimer, 250);
+    }
+}
+
+function triggerEnd() {
+    clearAutoRestart();
+    endOverlay.classList.toggle("white", whiteEnd);
+    endOverlay.classList.add("show");
+    window.setTimeout(() => endMain.classList.add("show"), 220);
+    window.setTimeout(() => endSub.classList.add("show"), 2300);
+    window.setTimeout(() => endAgain.classList.add("show"), 7000);
+    autoRestartTimer = window.setTimeout(() => resetAll(true), AUTO_RESTART_DELAY_MS);
+}
+
+function clearAutoRestart() {
+    window.clearTimeout(autoRestartTimer);
+    autoRestartTimer = null;
+}
+
+function selectDurationByOffset(offset) {
+    const activeIndex = Math.max(0, durationButtons.findIndex(button => button.classList.contains("active")));
+    const nextIndex = (activeIndex + offset + durationButtons.length) % durationButtons.length;
+    const nextButton = durationButtons[nextIndex];
+
+    if (nextButton.dataset.dur === "custom") {
+        customRow.classList.add("show");
+        customInput.focus();
+        return;
+    }
+
+    customRow.classList.remove("show");
+    setDuration(Number(nextButton.dataset.dur), nextButton);
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.body.requestFullscreen?.();
+    } else {
+        document.exitFullscreen?.();
+    }
+}
+
+function resetCursorIdle() {
+    document.body.classList.remove("cursor-hidden", "session-idle");
+    window.clearTimeout(cursorTimer);
+
+    if (!document.fullscreenElement) return;
+
+    cursorTimer = window.setTimeout(() => {
+        document.body.classList.add("cursor-hidden", "session-idle");
+    }, CURSOR_IDLE_MS);
+}
+
+async function requestWakeLock() {
+    if (!("wakeLock" in navigator) || wakeLock) return;
+
+    try {
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener("release", () => {
+            wakeLock = null;
+        });
+    } catch {
+        wakeLock = null;
+    }
+}
+
+flameButtons.forEach((button, index) => {
+    button.addEventListener("click", () => loadFlame(index));
+});
+
+durationButtons.forEach(button => {
+    button.addEventListener("click", () => {
+        if (button.dataset.dur === "custom") {
+            customRow.classList.toggle("show");
+            customInput.focus();
+            return;
+        }
+
+        customRow.classList.remove("show");
+        setDuration(Number(button.dataset.dur), button);
+    });
+});
+
+customSet.addEventListener("click", applyCustomTime);
+customInput.addEventListener("keydown", event => {
+    if (event.key === "Enter") applyCustomTime();
+    if (event.key === "Escape") customRow.classList.remove("show");
+});
+
+playBtn.addEventListener("click", toggleTimer);
+resetBtn.addEventListener("click", () => resetAll(false));
+fullscreenBtn.addEventListener("click", toggleFullscreen);
+whiteToggle.addEventListener("click", () => {
+    whiteEnd = !whiteEnd;
+    whiteToggle.classList.toggle("active", whiteEnd);
+    whiteToggle.setAttribute("aria-pressed", String(whiteEnd));
+});
+endAgain.addEventListener("click", () => resetAll(true));
+
+document.addEventListener("keydown", event => {
+    const typing = event.target === customInput;
+
+    if (typing && !["Enter", "Escape"].includes(event.key)) return;
+
+    if (event.code === "Space") {
+        event.preventDefault();
+        toggleTimer();
+        return;
+    }
+
+    switch (event.key) {
+        case "ArrowLeft":
+            event.preventDefault();
+            selectDurationByOffset(-1);
+            break;
+        case "ArrowRight":
+            event.preventDefault();
+            selectDurationByOffset(1);
+            break;
+        case "ArrowUp":
+            event.preventDefault();
+            loadFlame(currentFlame - 1);
+            break;
+        case "ArrowDown":
+            event.preventDefault();
+            loadFlame(currentFlame + 1);
+            break;
+        case "r":
+        case "R":
+            resetAll(false);
+            break;
+        case "f":
+        case "F":
+            toggleFullscreen();
+            break;
+        case "w":
+        case "W":
+            whiteToggle.click();
+            break;
+        case "Escape":
+            if (endOverlay.classList.contains("show")) resetAll(false);
+            if (document.fullscreenElement) document.exitFullscreen?.();
+            break;
+    }
+});
+
+document.addEventListener("fullscreenchange", resetCursorIdle);
+document.addEventListener("mousemove", resetCursorIdle);
+document.addEventListener("mousedown", resetCursorIdle);
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") requestWakeLock();
+});
+
 loadFlame(0);
+refresh();
 </script>
 </body>
 </html>
